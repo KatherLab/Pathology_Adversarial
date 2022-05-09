@@ -17,11 +17,16 @@ This is important to notice that this repository follows exactly the same proced
 
 ## Example data
 
+The example dataset which has been pre-processed based on the modifications explained in this study, can be found in https://zenodo.org/record/5337009. This tiles are derived from the TCGA-BRCA breast cancer histology dataset at https://portal.gdc.cancer.gov/ (please check this website for the original data license). 
+
 ## System requirements
 
+The code in this repository has been developed on Windows Server 2019 and it requires a CUDA-enabled NVIDIA GPU and a Python installation of at least version 3.8. 
+
 ## Installation guide
-Please install Python (e.g. Anaconda) on your system, download the codes here and run it. No installation required.
 
-## Demo
+To use this repository, it is recommended to check the https://github.com/KatherLab/HIA. The structure of the experiment file is same as it is been explained in HIA repository. Please install Python (e.g. Anaconda) on your windows system, and run the experiemnt file, filled with all the required information. No installation required. The training and deployment time can vary based on the dataset size and the computational power of the system. 
 
-## Instructions for use
+## Demo and Instructions for use
+
+To start training, you need to download the code in this repository and fill the experiment file, with the adresses to your training and in case to your validation set. It is necessary to define the target label which should be present in the clinical table. The number of epochs, batch size, learning rate can be defined in the experiment file. You can set the value of AdvTrain if you want to train your model adversarially robust and set it to False if you want to train it with the normal model. For all the othe details in experiement file, we would recomment to check the https://github.com/KatherLab/HIA. 
