@@ -1,5 +1,7 @@
 # Pathology_Adversarial
 
+## Overview
+
 This repository contains the Python version of a general workflow for Adversarial attacks and attack-proof artificial intelligence models in computational patholog.
 It is based on workflows which were previously described in [Kather et al., Nature Medicine 2019](https://www.nature.com/articles/s41591-019-0462-y) and 
 [Ghaffari Laleh et al. 2021](https://www.biorxiv.org/content/10.1101/2021.08.09.455633v1.full.pdf).
@@ -13,3 +15,13 @@ the advTrain flag in the experiment file. Also the strength of attack during tra
 
 This is important to notice that this repository follows exactly the same procedure as https://github.com/KatherLab/HIA. So it is recommended to check the initial repository, to be able to use the pathology_adversarial scripts. 
 
+## Example data
+
+## System requirements
+
+## Installation guide
+Please install Python (e.g. Anaconda) on your system, download the codes here and run it. No installation required.
+
+## Demo
+
+## Instructions for use
