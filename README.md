@@ -22,7 +22,7 @@ The example dataset which has been pre-processed based on the modifications expl
 
 ### Hardware requirements
 
-The code in this repository requires a CUDA-enabled NVIDIA GPU for a fast and convenient training. However, it will detect automatically the present of the GPU in the system and run the rest of the codes correspondingly.
+The code in this repository requires a CUDA-enabled NVIDIA GPU for a fast and convenient training. However, it will automatically detect the present of the GPU in the system and run the rest of the codes correspondingly.
 
 ### Software requirements
 
