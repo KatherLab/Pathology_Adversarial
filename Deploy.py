@@ -22,14 +22,13 @@ from models.resnetdsbn import *
 from attack import FastGradientSignUntargeted
 import torchattacks
 import shutil
-import torchattacks
 
 ##############################################################################
 
 if __name__ == '__main__':   
         
     for i in range(5):
-        parser = argparse.ArgumentParser(description = 'Main Script to Run deployment')
+        parser = argparse.ArgumentParser(description = 'Main Script to Run Training')
         p = r""
         expTemp =r"".format(i+1)
         if not i == 0:
@@ -39,23 +38,22 @@ if __name__ == '__main__':
                             default = expTemp, 
                             help = 'Adress to the experiment File')
         parser.add_argument('--modelAdr', type = str, 
-                            default = modelPath,
+                            default = modelPath,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
                             help = 'Adress to the selected model')
         args = parser.parse_args()    
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('\nTORCH Detected: {}\n'.format(device))
         
-        useCSV = True    
+        useCSV = True
         print(args.modelAdr)  
         
     ##############################################################################
- 
-        epsilons = [0.0, 0.25, 0.75,1.5]
+    
+
+        epsilons = [0, 0.25, 0.75, 1.5]
         epsilons = [i * 0.001 for i in epsilons]
-        additionalData = list(pd.read_csv(r"U:\WholeData.csv")['0'])  
          
         args = utils.ReadExperimentFile(args, deploy = True)    
-        args.batch_size  = 16
         torch.cuda.set_device(args.gpuNo)
         random.seed(args.seed)        
         args.target_label = args.target_labels[0]  
@@ -84,7 +82,7 @@ if __name__ == '__main__':
                                                                       cliniTablePath = args.clini_dir, slideTablePath = args.slide_dir,
                                                                       label = args.target_label, minNumberOfTiles = args.minNumBlocks,
                                                                       outputPath = args.projectFolder, reportFile = reportFile, csvName = args.csv_name,
-                                                                      patientNumber = args.numPatientToUse,additionalData = additionalData)                        
+                                                                      patientNumber = args.numPatientToUse)                        
         labelsList = utils.CheckForTargetType(labelsList)
         
         le = preprocessing.LabelEncoder()
@@ -99,8 +97,11 @@ if __name__ == '__main__':
         print('GENERATE NEW TILES...') 
          
         if args.useCSV == True:
-            path = r''.format(i+1)
+    
+            path = r"".format(i+1)
             test_data = pd.read_csv(path)
+            #test_data['TilePath'] = [i.replace('L:\\STAD', 'I:\STAD') for i in test_data['TilePath']]
+            #test_data['TilePath'] = [i.replace('K:\\AC-RCC-DX', 'G:\\AC-RCC-DX') for i in test_data['TilePath']]
             test_x = list(test_data['TilePath'])
             test_y = list(test_data['yTrue'])                
             test_data.to_csv(os.path.join(args.split_dir, 'TestSplit.csv'), index = False)                      
@@ -109,7 +110,7 @@ if __name__ == '__main__':
         
         else:                          
             test_data = GetTiles(csvFile = args.csvFile, label = args.target_label, target_labelDict = args.target_labelDict,
-                                 maxBlockNum = args.maxBlockNum, test = True, seed = i)                
+                                 maxBlockNum = args.maxBlockNum, test = True)                
             test_x = list(test_data['TilePath'])
             test_y = list(test_data['yTrue'])                
             test_data.to_csv(os.path.join(args.split_dir, 'TestSplit.csv'), index = False)                      
@@ -126,12 +127,10 @@ if __name__ == '__main__':
         test_set = DatasetLoader(test_x, test_y, transform = torchvision.transforms.ToTensor, target_patch_size = input_size)           
         testGenerator = torch.utils.data.DataLoader(test_set, **params)
         
-        criterion = nn.CrossEntropyLoss()
         args.exclusive = False
         
         for eps in epsilons:    
-            print('EPSILON  = {}'.format(eps)) 
-            
+            print('EPSILON  = {}'.format(eps))             
             if args.model_name == 'bns':              
                 model1 = resnet50dsbn(pretrained =True, widefactor=1)
                 model1.fc = nn.Linear(model1.fc.in_features, args.num_classes)
@@ -139,23 +138,16 @@ if __name__ == '__main__':
             else:
                 model1, input_size = utils.Initialize_model(model_name = args.model_name, num_classes = args.num_classes,                              
                                                           feature_extract = False, use_pretrained = True)   
-   
                 args.bns = False
                 
             model1.eval()
             model1 = model1.to(device)
+            
             if eps == 0.0:
                 attack = None
             else:   
-                attack = FastGradientSignUntargeted(model = model1, 
-                                    epsilon = eps, 
-                                    alpha = eps / 2,
-                                    min_val = 0, 
-                                    max_val = 1, 
-                                    max_iters = args.maxNoIteration, 
-                                    _type=args.perturbationType)
-                print('MAX ITERATION = {}'.format(args.maxNoIteration))
-                print('perturbationType = {}'.format(args.perturbationType))
+                attack = utils.Initialize_attack(args.attackName, model1, epsilon = eps, perturbationType = args.perturbationType, maxNoIteration = args.maxNoIteration,
+                                      alpha = args.alpha, steps = args.steps, n_classes = args.num_classes)
                 
             model1.load_state_dict(torch.load(args.modelAdr, map_location=lambda storage, loc: storage))   
             
@@ -163,7 +155,7 @@ if __name__ == '__main__':
                 attackFlag = False
             else:
                 attackFlag = True
-            probsList = Validate_model(model = model1, dataloaders = testGenerator, criterion = criterion, attackFlag = attackFlag,
+            probsList = Validate_model(model = model1, dataloaders = testGenerator, attackFlag = attackFlag,
                                          bns = args.bns, attack = attack, exclusive = args.exclusive)
             
             probs = {}

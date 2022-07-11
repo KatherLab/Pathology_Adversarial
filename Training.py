@@ -29,10 +29,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def Training(args):
         
     targetLabels = args.target_labels
+    additionalData = list(pd.read_csv(r"U:\WholeData.csv")['0'])
+
     for targetLabel in targetLabels:
         for repeat in range(args.repeatExperiment): 
             
             args.target_label = targetLabel        
+            random.seed(args.seed)
             args.projectFolder = utils.CreateProjectFolder(ExName = args.project_name, ExAdr = args.adressExp, targetLabel = targetLabel,
                                                            model_name = args.model_name, repeat = repeat + 1)
             print('-' * 30 + '\n')
@@ -59,7 +62,7 @@ def Training(args):
                                                                           cliniTablePath = args.clini_dir, slideTablePath = args.slide_dir,
                                                                           label = targetLabel, minNumberOfTiles = args.minNumBlocks,
                                                                           outputPath = args.projectFolder, reportFile = reportFile, csvName = args.csv_name,
-                                                                          patientNumber = args.numPatientToUse)                        
+                                                                          patientNumber = args.numPatientToUse, additionalData = additionalData)                        
             labelsList = utils.CheckForTargetType(labelsList)
             
             le = preprocessing.LabelEncoder()
@@ -81,13 +84,13 @@ def Training(args):
             
                 print('GENERATE NEW TILES...')                            
                 train_data = GetTiles(csvFile = args.csvFile, label = targetLabel, target_labelDict = args.target_labelDict, 
-                                  maxBlockNum = args.maxBlockNum, test = False, filterPatients = list(t_data['PATIENT']), seed = repeat)                
+                                  maxBlockNum = args.maxBlockNum, test = False, filterPatients = list(t_data['PATIENT']))                
                 train_x = list(train_data['TilePath'])
                 train_y = list(train_data['yTrue'])  
                 train_data.to_csv(os.path.join(args.split_dir, 'TrainSplit.csv'), index = False)
                 
                 val_data = GetTiles(csvFile = args.csvFile, label = targetLabel, target_labelDict = args.target_labelDict, 
-                                  maxBlockNum = args.maxBlockNum, test = True, filterPatients = list(v_data['PATIENT']), seed = repeat) 
+                                  maxBlockNum = args.maxBlockNum, test = True, filterPatients = list(v_data['PATIENT'])) 
                 
                 val_x = list(val_data['TilePath']) 
                 val_y = list(val_data['yTrue'])                  
@@ -96,7 +99,7 @@ def Training(args):
                 print('-' * 30) 
             else:                          
                 train_data = GetTiles(csvFile = args.csvFile, label = targetLabel, target_labelDict = args.target_labelDict,
-                                      maxBlockNum = args.maxBlockNum, test = False, seed = repeat)                
+                                      maxBlockNum = args.maxBlockNum, test = False)                
                 train_x = list(train_data['TilePath'])
                 train_y = list(train_data['yTrue']) 
                 valGenerator = []                                   
@@ -105,7 +108,7 @@ def Training(args):
                 print('-' * 30)
             
             if  args.model_name == 'bns': 
-                model = resnet50dsbn(pretrained = args.pretrain, widefactor = args.widefactor)        
+                model = resnet50dsbn(pretrained = True, widefactor = 1)        
                 model.fc = nn.Linear(model.fc.in_features, args.num_classes)
                 input_size = 224
             else:
@@ -144,7 +147,7 @@ def Training(args):
             lr_finder.reset()
     
             if  args.model_name == 'bns': 
-                model = resnet50dsbn(pretrained = args.pretrain, widefactor = args.widefactor)        
+                model = resnet50dsbn(pretrained = True, widefactor = 1)        
                 model.fc = nn.Linear(model.fc.in_features, args.num_classes)
                 input_size = 224
             else:
@@ -165,6 +168,8 @@ def Training(args):
                     ct += 1
             min_grad_idx = (np.gradient(np.array(lr_finder.history['loss']))).argmin()
             lr = np.round(lr_finder.history['lr'][min_grad_idx], 6)/10
+            if lr > 0.001:
+                lr  = 0.0001
             print('Learning Rate = {}'.format(lr))
             optimizer = torch.optim.Adam(model.parameters(),
                                            lr=lr, 
@@ -172,13 +177,10 @@ def Training(args):
             criterion = nn.CrossEntropyLoss()
             print('\nSTART TRAINING ...', end = ' ')
             if args.adv_train:
-                attack = FastGradientSignUntargeted(model = model, 
-                                                    epsilon = args.epsilon, 
-                                                    alpha = args.alpha, 
-                                                    min_val = 0, 
-                                                    max_val = 1, 
-                                                    max_iters = args.maxNoIteration, 
-                                                    _type=args.perturbationType)
+                print('ROBUST')
+                attack = utils.Initialize_attack(args.attackName, model, epsilon = args.epsilon, perturbationType = args.perturbationType, maxNoIteration = args.maxNoIteration,
+                                      alpha = args.alpha, steps = args.steps, n_classes = args.num_classes)
+                
             else:
                 attack = None
                     
@@ -193,8 +195,6 @@ def Training(args):
                               columns =['train_loss', 'train_acc', 'val_loss', 'val_acc'])                
             history.to_csv(os.path.join(args.result_dir, 'TRAIN_HISTORY_FULL' + '.csv'), index = False)
             reportFile.write('Training complete in ' + spentTime + '\n')
-            reportFile.write('Optimum LR is {} \n'.format(np.round(lr_finder.history['lr'][min_grad_idx], 6)/10))                
-
             reportFile.close()
                   
 ##############################################################################

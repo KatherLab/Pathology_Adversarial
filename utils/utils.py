@@ -17,6 +17,8 @@ from torchvision import models
 import json
 from pytorch_pretrained_vit import ViT
 from efficientnet_pytorch import EfficientNet
+import torchattacks
+import timm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
            
@@ -126,14 +128,12 @@ def Initialize_model(model_name, num_classes, feature_extract, use_pretrained = 
 
     if model_name == "resnet18":
         model_ft = models.resnet18(pretrained = use_pretrained)
-        Set_parameter_requires_grad(model_ft, feature_extract)
         num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, num_classes)
         input_size = 224
 
     elif model_name == "resnet50":
-        model_ft = models.resnet50(pretrained = use_pretrained)
-        Set_parameter_requires_grad(model_ft, feature_extract)
+        model_ft = models.resnet50(pretrained = True)
         num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, num_classes)
         input_size = 224
@@ -141,21 +141,49 @@ def Initialize_model(model_name, num_classes, feature_extract, use_pretrained = 
     elif model_name == "vit":  
         input_size = 224
         model_ft = ViT('B_16_imagenet1k', pretrained = True, image_size = input_size)
-        Set_parameter_requires_grad(model_ft, feature_extract)
         num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, num_classes)        
     elif model_name == 'efficient':
         model_ft = EfficientNet.from_pretrained('efficientnet-b7')
-        Set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft._fc.in_features
+        num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, num_classes)
         input_size = 224
     elif model_name == 'bns':
         input_size = 224
+    elif model_name == 'bit':
+        model_ft = timm.create_model('resnetv2_50x1_bitm_in21k', pretrained=True)
+        num_ftrs = model_ft.num_classes
+        model_ft = nn.Sequential(
+            model_ft,
+            nn.Linear(num_ftrs, num_classes)
+        )
+        input_size = 224
+    elif model_name == 'coda':
+        from coda.interpretability.utils import get_pretrained
+        model_ft = get_pretrained(model="9L-L-CoDA-SQ-100000", dataset="Imagenet")
+        input_size = 256
     else:
         print("Invalid model name, exiting...")
     return model_ft, input_size
 
+###############################################################################
+
+
+def Initialize_attack(attackName, model, epsilon = None, perturbationType = None, maxNoIteration = None,
+                      alpha = None, steps = None, n_classes = None):
+    if attackName == 'PGD':
+        atk = torchattacks.PGD(model, eps = epsilon, alpha=alpha, steps=steps)
+    elif attackName == 'FGSM':
+        atk = torchattacks.FGSM(model, eps=epsilon)
+    elif attackName == 'AutoAttack':
+        atk = torchattacks.AutoAttack(model, norm=perturbationType, eps=epsilon, version='standard', n_classes=n_classes, seed=0, verbose=False)
+    elif attackName == 'pixel':
+        #atk = torchattacks.OnePixel(model, pixels=5, inf_batch=50)
+       # atk = torchattacks.DIFGSM(model, eps=epsilon, alpha=alpha, steps=steps, diversity_prob=0.5, resize_rate=0.9)
+       atk = torchattacks.DeepFool(model, steps=100)
+    return atk
+            
+        
 ###############################################################################
 
 def Set_parameter_requires_grad(model, feature_extracting):
@@ -401,32 +429,68 @@ def ReadExperimentFile(args, deploy = False):
         args.adv_train = True  
         
     if args.adv_train:
-        try:
-         args.maxNoIteration = int(data['maxNoIteration'])  
+        try: 
+            args.attackName = data['attackName']
         except:
-            print('MAX NUMBER OF ITERATION VALUE IS NOT DEFINED! \nDEFAULT VALUE WILL BE USED : 10\n')  
+            print('ATTACK NAME IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : PGD\n')  
             print('-' * 30)
-            args.maxNoIteration = 10 
-        try:
-            args.epsilon = data['epsilon']
-        except:
-            print('EPSILON IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0005')   
-            print('-' * 30)
-            args.epsilon = 0.0005
-            
-        try:
-            args.alpha = data['alpha']
-        except:
-            print('ALPHA IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0025')   
-            print('-' * 30)
-            args.alpha = 0.0025
-            
-        try:
+            args.attackName = 'PGD'       
+        try: 
             args.perturbationType = data['perturbationType']
         except:
-            print('PERTURBATION TYPE IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : linf')   
+            print('perturbationType IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : Linf\n')  
             print('-' * 30)
-            args.perturbationType = 'linf'
+            args.perturbationType = 'Linf' 
+        try: 
+            args.maxNoIteration = data['maxNoIteration']
+        except:
+            print('maxNoIteration IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 10\n')  
+            print('-' * 30)
+            args.maxNoIteration = 10
+        try: 
+            args.alpha = data['alpha']
+        except:
+            print('alpha IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0025\n')  
+            print('-' * 30)
+            args.alpha = 0.0025 
+        try: 
+            args.steps = data['steps']
+        except:
+            print('steps IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 4\n')  
+            print('-' * 30)
+            args.steps = 10             
+        try: 
+            args.epsilon = data['epsilon']
+        except:
+            print('EPSILON IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0015\n')  
+            print('-' * 30)
+            args.epsilon = 0.0015                  
+        # try:
+        #  args.maxNoIteration = int(data['maxNoIteration'])  
+        # except:
+        #     print('MAX NUMBER OF ITERATION VALUE IS NOT DEFINED! \nDEFAULT VALUE WILL BE USED : 10\n')  
+        #     print('-' * 30)
+        #     args.maxNoIteration = 10 
+        # try:
+        #     args.epsilon = data['epsilon']
+        # except:
+        #     print('EPSILON IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0005')   
+        #     print('-' * 30)
+        #     args.epsilon = 0.0005
+            
+        # try:
+        #     args.alpha = data['alpha']
+        # except:
+        #     print('ALPHA IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.0025')   
+        #     print('-' * 30)
+        #     args.alpha = 0.0025
+            
+        # try:
+        #     args.perturbationType = data['perturbationType']
+        # except:
+        #     print('PERTURBATION TYPE IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : linf')   
+        #     print('-' * 30)
+        #     args.perturbationType = 'linf'
             
     if  args.early_stopping:        
         try:
@@ -448,10 +512,6 @@ def ReadExperimentFile(args, deploy = False):
         print('FREEZE RATIO IS NOT DEFINED!\nDEFAULT VALUE WILL BE USED : 0.5')   
         print('-' * 30)
         args.freeze_Ratio = 0.5
-        
-
-        
-        
     try:
         args.maxBlockNum = data['maxNumBlocks']
     except:
@@ -465,8 +525,6 @@ def ReadExperimentFile(args, deploy = False):
         print('-' * 30)
         args.gpuNo = 0  
         
-    args.pretrain = True
-    args.widefactor = 1
     return args
 
 

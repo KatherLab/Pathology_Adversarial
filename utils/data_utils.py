@@ -18,6 +18,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Sampler, WeightedRandomSampler, RandomSampler, SequentialSampler, sampler
 from torchvision import transforms
 import utils.utils as utils
+import torch.nn as nn
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -414,5 +415,19 @@ class DatasetLoader(torch.utils.data.Dataset):
             X = self.transform(X)
         return X, y
 
+###############################################################################
+
+class AddInverse(nn.Module):
+
+    def __init__(self):
+        """
+            Adds (1-in_tensor) as additional channels to its input via torch.cat().
+            Can be used for images to give all spatial locations the same sum over the channels to reduce color bias.
+        """
+        super().__init__()
+
+    def forward(self, in_tensor):
+        out = torch.cat([in_tensor, 1-in_tensor ], 0)
+        return out
 ###############################################################################
     

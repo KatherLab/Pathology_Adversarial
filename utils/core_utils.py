@@ -81,9 +81,7 @@ def Train_model(model, trainLoaders, args, valLoaders = [], criterion = None,
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 if args.adv_train == True and args.model_name == 'bns':
-                    adv_images = attack.perturb(original_images = inputs, labels = labels, 
-                                                reduction4loss = 'mean', random_start = True, bns = True, 
-                                                exclusive = False)
+                    adv_images = attack(inputs, labels)
                     model.train()
                     output_ = model(adv_images, [1])
                     output = model(inputs, [0])
@@ -91,15 +89,14 @@ def Train_model(model, trainLoaders, args, valLoaders = [], criterion = None,
                     loss = criterion(output, labels)
                     loss_ = criterion(output_, labels)
                     loss_t = loss + loss_ 
+                    
                 elif args.adv_train == False and args.model_name == 'bns':
                     model.train()
                     output = model(inputs, [0])
                     labels = labels.type(torch.long)
                     loss_t = criterion(output, labels)
                 elif args.adv_train == True and (not args.model_name == 'bns'):
-                    adv_images = attack.perturb(original_images = inputs, labels = labels, 
-                            reduction4loss = 'mean', random_start = True, bns = False, 
-                            exclusive = False)
+                    adv_images = attack(inputs, labels)
                     model.train()
                     output = model(adv_images)
                     labels = labels.type(torch.long)
@@ -164,7 +161,7 @@ def Train_model(model, trainLoaders, args, valLoaders = [], criterion = None,
     
 ##############################################################################    
     
-def Validate_model(model, dataloaders, criterion, attackFlag = False, bns = False, attack = None, exclusive = False):
+def Validate_model(model, dataloaders, attackFlag = False, bns = False, attack = None, exclusive = False):
     
     phase = 'test'
     model.eval()
@@ -176,11 +173,9 @@ def Validate_model(model, dataloaders, criterion, attackFlag = False, bns = Fals
         if bns:
             if attackFlag:
                 with torch.enable_grad():
-                    images = attack.perturb(original_images = inputs, labels = labels, 
-                                            reduction4loss = 'mean', random_start = False, bns = True, 
-                                            exclusive = False)
+                    adv_images = attack(inputs, labels)
                 model.eval()
-                outputs = nn.Softmax(dim=1)(model(images, [1]))                
+                outputs = nn.Softmax(dim=1)(model(adv_images, [1]))                
             else:
                 images = inputs
                 with torch.set_grad_enabled(phase == 'train'): 
@@ -189,10 +184,7 @@ def Validate_model(model, dataloaders, criterion, attackFlag = False, bns = Fals
         else:
               if attackFlag:
                   with torch.enable_grad():
-                       images= attack.perturb(original_images = inputs, labels = labels, 
-                                             reduction4loss = 'mean', random_start = False, bns = False, 
-                                             exclusive = False)
-                      #images = attack(inputs, labels)
+                      images = attack(inputs, labels)
               else:
                 images = inputs
                 
