@@ -29,8 +29,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def Training(args):
         
     targetLabels = args.target_labels
-    additionalData = list(pd.read_csv(r"U:\WholeData.csv")['0'])
-
     for targetLabel in targetLabels:
         for repeat in range(args.repeatExperiment): 
             
@@ -62,7 +60,7 @@ def Training(args):
                                                                           cliniTablePath = args.clini_dir, slideTablePath = args.slide_dir,
                                                                           label = targetLabel, minNumberOfTiles = args.minNumBlocks,
                                                                           outputPath = args.projectFolder, reportFile = reportFile, csvName = args.csv_name,
-                                                                          patientNumber = args.numPatientToUse, additionalData = additionalData)                        
+                                                                          patientNumber = args.numPatientToUse)                        
             labelsList = utils.CheckForTargetType(labelsList)
             
             le = preprocessing.LabelEncoder()
@@ -155,7 +153,6 @@ def Training(args):
             model = model.to(device) 
         
             if not args.model_name in ['bns', 'vit']:
-                print('FRZIIIIIIIIIIIIIIIIIIIING')
                 noOfLayers = 0
                 for name, child in model.named_children():
                     noOfLayers += 1            
@@ -177,7 +174,6 @@ def Training(args):
             criterion = nn.CrossEntropyLoss()
             print('\nSTART TRAINING ...', end = ' ')
             if args.adv_train:
-                print('ROBUST')
                 attack = utils.Initialize_attack(args.attackName, model, epsilon = args.epsilon, perturbationType = args.perturbationType, maxNoIteration = args.maxNoIteration,
                                       alpha = args.alpha, steps = args.steps, n_classes = args.num_classes)
                 
