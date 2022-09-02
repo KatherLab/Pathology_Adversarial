@@ -29,11 +29,11 @@ if __name__ == '__main__':
         
     for i in range(5):
         parser = argparse.ArgumentParser(description = 'Main Script to Run Training')
-        p = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_AA_TESTFULL_1.txt"
-        expTemp =r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_AA_TESTFULL_{}.txt".format(i+1)
+        p = r""
+        expTemp =r"".format(i+1)
         if not i == 0:
             shutil.copy(p, expTemp)
-        modelPath = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/TCGA_RCC_RN50_TRAINFULL_{}/RESULTS/bestModel".format(i+1)
+        modelPath = r"".format(i+1)
         parser.add_argument('--adressExp', type = str, 
                             default = expTemp, 
                             help = 'Adress to the experiment File')
@@ -52,9 +52,7 @@ if __name__ == '__main__':
 
         epsilons = [0, 0.25, 0.75, 1.5]
         epsilons = [i * 0.001 for i in epsilons]
-        
-        #additionalData = list(pd.read_csv(r"U:\WholeData.csv")['0'])  
-         
+                 
         args = utils.ReadExperimentFile(args, deploy = True)    
         torch.cuda.set_device(args.gpuNo)
         args.target_label = args.target_labels[0]  
