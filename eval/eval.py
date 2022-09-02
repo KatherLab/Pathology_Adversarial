@@ -55,21 +55,21 @@ def CalculatePatientWiseAUC(resultCSVPath, args, reportFile, eps = None, epoch =
                 
         name = 'TEST_RESULT_PATIENT_BASED_EPSILON_'
         path = os.path.join(args.result_dir, name + str(eps) + '.csv')
-        print('\nAUC FOR TARGET {} IN THIS DATA SET WITH EPS {} IS: {} '.format(key, eps, np.round(metrics.auc(fpr, tpr), 3)))
-        reportFile.write('AUC FOR TARGET {} IN THIS DATA SET WITH EPS {} IS: {} '.format(key, eps, np.round(metrics.auc(fpr, tpr), 3)) + '\n')            
+        #print('\nAUC FOR TARGET {} IN THIS DATA SET WITH EPS {} IS: {} '.format(key, eps, np.round(metrics.auc(fpr, tpr), 3)))
+        #reportFile.write('AUC FOR TARGET {} IN THIS DATA SET WITH EPS {} IS: {} '.format(key, eps, np.round(metrics.auc(fpr, tpr), 3)) + '\n')            
         yProbDict[key] = yProbList
             
-    #lb = LabelBinarizer()  
-    #y_true = yTrueList
-    #lb.fit(y_true)
-    #y = lb.transform(y_true)
-    #y_score = np.array((yProbDict['ccRCC'], yProbDict['chRCC'], yProbDict['papRCC'])).T
+    lb = LabelBinarizer()  
+    y_true = yTrueList
+    lb.fit(y_true)
+    y = lb.transform(y_true)
+    y_score = np.array((yProbDict['ccRCC'], yProbDict['chRCC'], yProbDict['papRCC'])).T
     #y_score = np.array((yProbDict['diffuse'], yProbDict['intestinal'], yProbDict['mixed'])).T
-    #fpr, tpr, _ = roc_curve(y.ravel(), y_score.ravel())
-    #roc_auc_micro = auc(fpr, tpr)      
+    fpr, tpr, _ = roc_curve(y.ravel(), y_score.ravel())
+    roc_auc_micro = auc(fpr, tpr)      
     
-    #print('\nMicro AUC IN THIS DATA SET WITH EPS {} IS: {} '.format(eps, np.round(roc_auc_micro, 3)))
-    #reportFile.write('\nMicro AUC IN THIS DATA SET WITH EPS {} IS: {}'.format(eps, np.round(roc_auc_micro, 3)) + '\n')                    
+    print('\nMicro AUC IN THIS DATA SET WITH EPS {} IS: {} '.format(eps, np.round(roc_auc_micro, 3)))
+    reportFile.write('\nMicro AUC IN THIS DATA SET WITH EPS {} IS: {}'.format(eps, np.round(roc_auc_micro, 3)) + '\n')                    
     
     yProbDict = pd.DataFrame.from_dict(yProbDict)
     df = pd.DataFrame(list(zip(patientsList, yTrueList, yTrueLabelList)), columns =['PATIENT', 'yTrue', 'yTrueLabel'])

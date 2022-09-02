@@ -29,11 +29,11 @@ if __name__ == '__main__':
         
     for i in range(5):
         parser = argparse.ArgumentParser(description = 'Main Script to Run Training')
-        p = r""
-        expTemp =r"".format(i+1)
+        p = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_AA_TESTFULL_1.txt"
+        expTemp =r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_AA_TESTFULL_{}.txt".format(i+1)
         if not i == 0:
             shutil.copy(p, expTemp)
-        modelPath = r"".format(i+1)
+        modelPath = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/TCGA_RCC_RN50_TRAINFULL_{}/RESULTS/bestModel".format(i+1)
         parser.add_argument('--adressExp', type = str, 
                             default = expTemp, 
                             help = 'Adress to the experiment File')
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('\nTORCH Detected: {}\n'.format(device))
         
-        useCSV = True
+        useCSV = False
         print(args.modelAdr)  
         
     ##############################################################################
@@ -52,10 +52,11 @@ if __name__ == '__main__':
 
         epsilons = [0, 0.25, 0.75, 1.5]
         epsilons = [i * 0.001 for i in epsilons]
+        
+        #additionalData = list(pd.read_csv(r"U:\WholeData.csv")['0'])  
          
         args = utils.ReadExperimentFile(args, deploy = True)    
         torch.cuda.set_device(args.gpuNo)
-        random.seed(args.seed)        
         args.target_label = args.target_labels[0]  
         args.projectFolder = utils.CreateProjectFolder(ExName = args.project_name, ExAdr = args.adressExp, targetLabel = args.target_label,
                                                        model_name = args.model_name)
@@ -97,11 +98,12 @@ if __name__ == '__main__':
         print('GENERATE NEW TILES...') 
          
         if args.useCSV == True:
-    
-            path = r"".format(i+1)
+            path = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_PGD_TESTFULL_{}/SPLITS/TestSplit.csv".format(i+1)           
+            #path = r"G:\Adversarial\Adversarial_Revision\BERN_STAD_RN50_ROBUST_PGD_TESTFULL_{}\SPLITS\TestSplit.csv".format(i+1)
             test_data = pd.read_csv(path)
             #test_data['TilePath'] = [i.replace('L:\\STAD', 'I:\STAD') for i in test_data['TilePath']]
-            #test_data['TilePath'] = [i.replace('K:\\AC-RCC-DX', 'G:\\AC-RCC-DX') for i in test_data['TilePath']]
+            test_data['TilePath'] = [i.replace('L:\\RCC', '/run/media/narmin/Jupiter_08_Narmin/Adversarial/RCC') for i in test_data['TilePath']]
+            test_data['TilePath'] = [i.replace('\\', '/') for i in test_data['TilePath']]
             test_x = list(test_data['TilePath'])
             test_y = list(test_data['yTrue'])                
             test_data.to_csv(os.path.join(args.split_dir, 'TestSplit.csv'), index = False)                      
@@ -122,7 +124,7 @@ if __name__ == '__main__':
         
         params = {'batch_size': args.batch_size,
                   'shuffle': False,
-                  'num_workers': 8}
+                  'num_workers': 4}
             
         test_set = DatasetLoader(test_x, test_y, transform = torchvision.transforms.ToTensor, target_patch_size = input_size)           
         testGenerator = torch.utils.data.DataLoader(test_set, **params)
@@ -147,8 +149,7 @@ if __name__ == '__main__':
                 attack = None
             else:   
                 attack = utils.Initialize_attack(args.attackName, model1, epsilon = eps, perturbationType = args.perturbationType, maxNoIteration = args.maxNoIteration,
-                                      alpha = args.alpha, steps = args.steps, n_classes = args.num_classes)
-                
+                                      alpha = args.alpha, steps = args.steps, n_classes = args.num_classes)                
             model1.load_state_dict(torch.load(args.modelAdr, map_location=lambda storage, loc: storage))   
             
             if eps == 0.0:

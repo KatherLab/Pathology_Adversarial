@@ -18,7 +18,7 @@ from Training import Training
     
 parser = argparse.ArgumentParser(description = 'Main Script to Run Training')
 parser.add_argument('--adressExp', type = str,
-default = r"",  help = 'Adress to the experiment File')
+default = r"/run/media/narmin/Jupiter_08_Narmin/Adversarial/Adversarial_Revision/AACHEN_RCC_RN50_AA_TESTFULL_1.txt",  help = 'Adress to the experiment File')
   
 args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

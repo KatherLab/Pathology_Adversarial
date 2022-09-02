@@ -19,6 +19,7 @@ from pytorch_pretrained_vit import ViT
 from efficientnet_pytorch import EfficientNet
 import torchattacks
 import timm
+from AdvDrop.infod_sample import InfoDrop
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
            
@@ -176,11 +177,9 @@ def Initialize_attack(attackName, model, epsilon = None, perturbationType = None
     elif attackName == 'FGSM':
         atk = torchattacks.FGSM(model, eps=epsilon)
     elif attackName == 'AutoAttack':
-        atk = torchattacks.AutoAttack(model, norm=perturbationType, eps=epsilon, version='standard', n_classes=n_classes, seed=0, verbose=False)
-    elif attackName == 'pixel':
-        #atk = torchattacks.OnePixel(model, pixels=5, inf_batch=50)
-       # atk = torchattacks.DIFGSM(model, eps=epsilon, alpha=alpha, steps=steps, diversity_prob=0.5, resize_rate=0.9)
-       atk = torchattacks.DeepFool(model, steps=100)
+        atk = torchattacks.AutoAttack(model, eps = epsilon, n_classes = n_classes, version = 'standard')
+    elif attackName == 'AdvDrop':
+        atk = InfoDrop(model, batch_size = 1, q_size = epsilon, steps = 150, targeted = False) 
     return atk
             
         

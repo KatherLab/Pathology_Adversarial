@@ -7,30 +7,31 @@
     "trainFull":"True",
     "numPatientToUse" : "ALL",
 
-    "maxNumBlocks":100,
+    "maxNumBlocks":10,
     "minNumBlocks" : 8,
 
     "epochs":50,
-    "batchSize":128,
-    "freezeRatio" : 0.5,
-    "repeatExperiment" : 5,
+    "batchSize":16,
+    "freezeRatio":0.5,
+    "repeatExperiment":3,
      
     "seed":1,
 
-    "modelName":"vit",
+    "modelName":"resnet50",
     "opt":"adam",
     "lr":0.0001,
     "reg":0.00001,
     "gpuNo":1,
 
     "earlyStop":"True",
-    "minEpochToTrain":10, 
+    "minEpochToTrain":20, 
     "patience":5,
 
-    "advTrain" : "True",
-    "epsilon" : 0.005,
-    "alpha" : 0.0025,
-    "maxNoIteration" : 10,
-    "perturbationType" : "linf"
+    "advTrain":"True",
+    "attackName":"AdvDrop",
+    "perturbationType":"Linf",
+    "maxNoIteration":10,
+    "alpha":0.0025,
+    "steps":10
 }
  
