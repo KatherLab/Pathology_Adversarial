@@ -81,6 +81,7 @@ To start training, you need to download the code in this repository and fill the
 
     "advTrain" : "True", #If set to be True, then the model will be trained robustly. 
     "epsilon" : 0.005,
+    "attackName" : "AdvDrop",
     "alpha" : 0.0025,
     "maxNoIteration" : 10,
     "perturbationType" : "linf"
