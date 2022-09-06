@@ -29,19 +29,19 @@ The code in this repository requires a CUDA-enabled NVIDIA GPU for a fast and co
 #### OS Dependencies
 The scripts in this repository have been developed on windoes server 2019 (version 1809).
 
-#### Pathon Dependencies
+#### Python Dependencies (python 3.10.6)
 This repository mainly depends on the following packages:
 
 ````
-Pytorch 
-Scikit-learn
-Numpy
-Pandas
-OpenCV
-pytorch_pretrained_vit
-pickle
-efficientnet_pytorch
-torchvision
+Pytorch (1.11.0+cu113)
+Scikit-learn (1.1.2)
+Numpy (1.23.1)
+Pandas (1.4.3)
+OpenCV (4.6.0)
+pytorch_pretrained_vit (0.0.7)
+pickle (0.7.5)
+efficientnet_pytorch (0.7.1)
+torchvision (0.12.0+cu113)
 ````
 ## Installation guide
 
